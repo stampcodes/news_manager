@@ -58,14 +58,13 @@ contract NewsManager {
     }
 
     function addNews(
-        address _newsAddress,
         string memory _name,
         uint256 _deadline,
         uint256 _minValidations
-    ) public onlyAdmin {
+    ) public {
         newsList.push(
             NewsLibrary.News({
-                newsAddress: _newsAddress,
+                newsAddress: msg.sender,
                 name: _name,
                 deadline: _deadline,
                 minValidations: _minValidations,
