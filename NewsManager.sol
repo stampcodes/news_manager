@@ -1,135 +1,164 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-import "./NewsLibrary.sol";
+import "./NewsManagerLib.sol";
 
 contract NewsManager {
-    using NewsLibrary for address[];
-    using NewsLibrary for NewsLibrary.News;
+    using NewsManagerLib for mapping(uint256 => address);
+    using NewsManagerLib for uint256;
+
+    struct News {
+        address whoMadeTheNews;
+        string newsName;
+        uint256 expirationDate;
+        uint256 minValidations;
+        uint256 validationsCount;
+        bool validated;
+    }
 
     address public admin;
-    address[] public validators;
-    mapping(address => uint256) public rewards;
+    mapping(uint256 => address) private validators;
+    mapping(address => uint256) private rewards;
+    mapping(uint256 => News) private news;
+    mapping(address => bool) private IsAddressAdded;
     uint256 public totalRewards;
+    uint256 public rewardAmount = 1 ether;
 
-    NewsLibrary.News[] public newsList;
-    mapping(uint256 => mapping(address => bool)) public newsValidations;
+    event ValidatorAdded(uint256 indexed validatorId, address validatorAddress);
+    event ValidatorRemoved(uint256 indexed validatorId);
+    event NewsAdded(
+        uint256 indexed newsId,
+        address whoMadeTheNews,
+        string newsName,
+        uint256 expirationDate
+    );
+    event NewsValidated(uint256 indexed newsId, address validator);
+    event RewardDistributed(address indexed validator, uint256 amount);
+    event RewardAmountSet(uint256 newRewardAmount);
+    event FundsReceived(address from, uint256 amount);
 
     constructor() {
         admin = msg.sender;
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin can perform this action.");
+        require(msg.sender == admin, "You are not the admin");
         _;
     }
 
-    function addValidator(address _validator) public onlyAdmin {
-        require(!validators.isValidator(_validator), "Address already added.");
-        validators.push(_validator);
-    }
-
-    function removeValidator(address _validator) public onlyAdmin {
+    modifier validatorNotRegistered(uint256 _validatorId) {
         require(
-            validators.isValidator(_validator),
-            "The validator does not exist."
+            validators[_validatorId] == address(0),
+            "The validator Id is already taken"
         );
-        for (uint i = 0; i < validators.length; i++) {
-            if (validators[i] == _validator) {
-                validators[i] = validators[validators.length - 1];
-                validators.pop();
-                return;
-            }
-        }
+        _;
     }
 
-    function assignReward(address _validator, uint256 _amount) internal {
+    modifier idNotRegistered(uint256 _newsId) {
         require(
-            address(this).balance >= _amount,
-            "Not enough balance in contract."
+            news[_newsId].whoMadeTheNews == address(0),
+            "The news Id is already taken"
         );
-        rewards[_validator] += _amount;
-        totalRewards += _amount;
-        payable(_validator).transfer(_amount);
+        _;
     }
 
-    function getReward(address _validator) public view returns (uint256) {
-        return rewards[_validator];
+    function addValidator(
+        uint256 _validatorId,
+        address _validatorAddress
+    ) public onlyAdmin validatorNotRegistered(_validatorId) {
+        require(!IsAddressAdded[_validatorAddress], "Address already added");
+        validators[_validatorId] = _validatorAddress;
+        IsAddressAdded[_validatorAddress] = true;
+        emit ValidatorAdded(_validatorId, _validatorAddress);
+    }
+
+    function removeValidator(uint256 _validatorId) public onlyAdmin {
+        require(
+            validators[_validatorId] != address(0),
+            "The validator does not exist"
+        );
+        IsAddressAdded[validators[_validatorId]] = false;
+        delete validators[_validatorId];
+        emit ValidatorRemoved(_validatorId);
     }
 
     function addNews(
-        string memory _name,
-        uint256 _deadline,
-        uint256 _minValidations
-    ) public {
-        newsList.push(
-            NewsLibrary.News({
-                newsAddress: msg.sender,
-                name: _name,
-                deadline: _deadline,
-                minValidations: _minValidations,
-                validated: false,
-                validationCount: 0
-            })
+        uint256 _newsId,
+        string memory _newsName,
+        uint256 _expirationDate
+    ) public idNotRegistered(_newsId) {
+        news[_newsId] = News(
+            msg.sender,
+            _newsName,
+            _expirationDate,
+            3,
+            0,
+            false
         );
+        emit NewsAdded(_newsId, msg.sender, _newsName, _expirationDate);
     }
 
-    function getNews(
-        uint _index
-    )
-        public
-        view
-        returns (address, string memory, uint256, uint256, bool, uint256)
-    {
-        NewsLibrary.News storage n = newsList[_index];
-        return (
-            n.newsAddress,
-            n.name,
-            n.deadline,
-            n.minValidations,
-            n.validated,
-            n.validationCount
-        );
+    function getNewsDetails(uint256 _newsId) public view returns (News memory) {
+        return news[_newsId];
     }
 
-    function validateNews(uint _newsIndex) public {
+    function validateNews(uint256 _newsId) public {
         require(
-            validators.isValidator(msg.sender),
-            "Only validators can validate news."
+            IsAddressAdded[msg.sender],
+            "You are not a registered validator"
         );
-        NewsLibrary.News storage n = newsList[_newsIndex];
-        require(block.timestamp <= n.deadline, "Validation period has ended.");
         require(
-            !newsValidations[_newsIndex][msg.sender],
-            "Validator has already validated this news."
+            block.timestamp <= news[_newsId].expirationDate,
+            "Validation period expired"
         );
+        require(!news[_newsId].validated, "News already validated");
 
-        newsValidations[_newsIndex][msg.sender] = true;
-        n.validationCount += 1;
-
-        if (n.isNewsValidated()) {
-            n.validated = true;
-            assignReward(msg.sender, 1 ether);
+        news[_newsId].validationsCount += 1;
+        if (
+            news[_newsId].validationsCount.isNewsValidated(
+                news[_newsId].minValidations
+            )
+        ) {
+            news[_newsId].validated = true;
+            rewards[msg.sender] += rewardAmount;
+            totalRewards += rewardAmount;
+            emit NewsValidated(_newsId, msg.sender);
         }
     }
 
-    function isNewsValidated(uint _newsIndex) public view returns (bool) {
-        NewsLibrary.News storage n = newsList[_newsIndex];
-        return n.isNewsValidated();
+    function distributeRewards(
+        address payable _validator,
+        uint256 _amount
+    ) public payable onlyAdmin {
+        require(rewards[_validator] >= _amount, "Not enough rewards");
+        rewards[_validator] -= _amount;
+        totalRewards -= _amount;
+        _validator.transfer(_amount);
+        emit RewardDistributed(_validator, _amount);
     }
 
-    function emergencyWithdraw(address payable _to) public onlyAdmin {
-        require(address(this).balance > 0, "No balance to withdraw.");
-        _to.transfer(address(this).balance);
-    }
-
-    function addFunds() public payable onlyAdmin {}
-
-    function getContractBalance() public view returns (uint256) {
+    function getContractBalance() public view onlyAdmin returns (uint256) {
         return address(this).balance;
+    }
+
+    function addFund() public payable onlyAdmin {
+        emit FundsReceived(msg.sender, msg.value);
+    }
+
+    function setRewardAmount(uint256 _newRewardAmount) public onlyAdmin {
+        rewardAmount = _newRewardAmount;
+        emit RewardAmountSet(_newRewardAmount);
+    }
+
+    receive() external payable {
+        emit FundsReceived(msg.sender, msg.value);
     }
 
     function getValidatorCount() public view returns (uint256) {
         return validators.getValidatorCount();
+    }
+
+    function isValidator(address _validator) public view returns (bool) {
+        return validators.isValidator(_validator);
     }
 }
