@@ -4,7 +4,15 @@ This project contains a smart contract named "News Manager" developed in Solidit
 
 ## Overview
 
-The News Manager contract allows users to add, validate, and view news articles. It is designed to be efficient and secure, utilizing best practices for smart contract development.
+The project is a **Decentralized News Validation** application that leverages blockchain technology to ensure the authenticity of news articles.
+
+It features a smart contract that allows users to add news articles, which are then validated by registered validators.
+
+The smart contract includes functionality for adding and removing validators, adding news, and validating news with rewards distributed to validators upon successful validation.
+
+Built with **Solidity** on the **Ethereum** blockchain, the application ensures **transparency** and **security** in the news validation process.
+
+Validators are rewarded for their efforts, and the contract admin can manage and distribute these rewards, ensuring a fair validation system.
 
 ## Contract Address on Sepolia
 
@@ -21,7 +29,7 @@ The contract has been deployed on the Sepolia test network and can be viewed on 
 
 The project is divided into two main files:
 
-1. **NewsManager.sol**: This file contains the main contract that handles the logic of adding, viewing and validating news articles.
+1. **NewsManager.sol**: This file contains the main contract that handles the logic of adding, viewing, and validating news articles.
 2. **NewsManagerLib.sol**: This file contains a support library used by the main contract for auxiliary functions.
 
 ### Main Features
