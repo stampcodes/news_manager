@@ -1,6 +1,6 @@
 # News Manager Smart Contract
 
-This project contains a smart contract named "News Manager" developed in Solidity and deployed on the Sepolia test network. The contract allows the management of news, including creating, updating, and viewing articles.
+This project contains a smart contract named "News Manager" developed in Solidity and deployed on the Sepolia test network. The contract allows the management of news, including creating, validating, and viewing articles.
 
 ## Overview
 
