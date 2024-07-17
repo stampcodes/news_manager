@@ -4,7 +4,7 @@ This project contains a smart contract named "News Manager" developed in Solidit
 
 ## Overview
 
-The News Manager contract allows users to add, update, and view news articles. It is designed to be efficient and secure, utilizing best practices for smart contract development.
+The News Manager contract allows users to add, validate, and view news articles. It is designed to be efficient and secure, utilizing best practices for smart contract development.
 
 ## Contract Address on Sepolia
 
