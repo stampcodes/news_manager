@@ -20,7 +20,7 @@ contract NewsManager {
     mapping(uint256 => address) private validators;
     mapping(address => uint256) private rewards;
     mapping(uint256 => News) private news;
-    mapping(address => bool) private IsAddressAdded;
+    mapping(address => bool) private isAddressAdded;
     uint256 public totalRewards;
     uint256 public rewardAmount = 1 ether;
 
@@ -66,9 +66,9 @@ contract NewsManager {
         uint256 _validatorId,
         address _validatorAddress
     ) public onlyAdmin validatorNotRegistered(_validatorId) {
-        require(!IsAddressAdded[_validatorAddress], "Address already added");
+        require(!isAddressAdded[_validatorAddress], "Address already added");
         validators[_validatorId] = _validatorAddress;
-        IsAddressAdded[_validatorAddress] = true;
+        isAddressAdded[_validatorAddress] = true;
         emit ValidatorAdded(_validatorId, _validatorAddress);
     }
 
@@ -77,7 +77,7 @@ contract NewsManager {
             validators[_validatorId] != address(0),
             "The validator does not exist"
         );
-        IsAddressAdded[validators[_validatorId]] = false;
+        isAddressAdded[validators[_validatorId]] = false;
         delete validators[_validatorId];
         emit ValidatorRemoved(_validatorId);
     }
@@ -104,7 +104,7 @@ contract NewsManager {
 
     function validateNews(uint256 _newsId) public {
         require(
-            IsAddressAdded[msg.sender],
+            isAddressAdded[msg.sender],
             "You are not a registered validator"
         );
         require(
