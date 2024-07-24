@@ -6,7 +6,7 @@ library NewsManagerLib {
         mapping(uint256 => address) storage validators
     ) external view returns (uint256) {
         uint256 count = 0;
-        for (uint256 i = 0; i < 2 ** 256 - 1; i++) {
+        for (uint256 i = 0; i < type(uint256).max; i++) {
             if (validators[i] != address(0)) {
                 count++;
             }
@@ -18,7 +18,7 @@ library NewsManagerLib {
         mapping(uint256 => address) storage validators,
         address validator
     ) external view returns (bool) {
-        for (uint256 i = 0; i < 2 ** 256 - 1; i++) {
+        for (uint256 i = 0; i < type(uint256).max; i++) {
             if (validators[i] == validator) {
                 return true;
             }
