@@ -48,13 +48,13 @@ The project is divided into two main files:
 1. Clone the repository:
 
 ```sh
-git clone https://github.com/stampcodes/NewsManager.git
+git clone https://github.com/stampcodes/news_manager.git
 ```
 
 2. Navigate to the project directory:
 
 ```sh
-cd NewsManager
+cd news_manager
 ```
 
 3. Open Remix IDE and import the NewsManager.sol and NewsManagerLib.sol files.
@@ -76,4 +76,4 @@ Distributed under the GPL-3.0 license. See `LICENSE` for more information.
 For more information, you can contact:
 
 - **Name**: Andrea Fragnelli
-- **Project Link**: [https://github.com/stampcodes/NewsManager](https://github.com/stampcodes/NewsManager)
+- **Project Link**: [https://github.com/stampcodes/news_manager](https://github.com/stampcodes/news_manager)
